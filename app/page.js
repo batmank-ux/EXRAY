@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-neutral-950 font-sans text-neutral-100">
@@ -28,12 +30,12 @@ export default function Home() {
               ShopXray
             </span>
           </a>
-          <a
-            href="#get-started"
+          <Link
+            href="/dashboard"
             className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 sm:px-5 sm:text-[0.9375rem]"
           >
             Get Started
-          </a>
+          </Link>
         </nav>
       </header>
 
@@ -57,12 +59,12 @@ export default function Home() {
           </p>
 
           <div id="get-started" className="mt-10 flex w-full flex-col items-center gap-3 sm:mt-12">
-            <a
-              href="#get-started"
+            <Link
+              href="/dashboard"
               className="inline-flex w-full max-w-sm items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-violet-900/40 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 sm:w-auto sm:max-w-none sm:px-10 sm:py-4 sm:text-lg"
             >
               Start Spying For Free
-            </a>
+            </Link>
             <p className="text-sm text-neutral-500">No credit card required</p>
           </div>
         </div>
