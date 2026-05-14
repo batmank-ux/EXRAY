@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 function IconMagnifyingGlass({ className }) {
   return (
@@ -213,6 +215,9 @@ const NAV_ITEMS = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState("");
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const [activeNav, setActiveNav] = useState("shop-spy");
   const [shopInput, setShopInput] = useState("");
   const [fetchRequest, setFetchRequest] = useState(null);
@@ -224,6 +229,28 @@ export default function DashboardPage() {
   const [keywordLoading, setKeywordLoading] = useState(false);
   const [keywordError, setKeywordError] = useState(null);
   const [keywordData, setKeywordData] = useState(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    function syncUser(user) {
+      setUserEmail(user?.email ?? "");
+    }
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      syncUser(user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!fetchRequest) return undefined;
@@ -340,6 +367,15 @@ export default function DashboardPage() {
     setFetchRequest({ shop: query, id: Date.now() });
   }
 
+  async function handleLogout() {
+    setLogoutLoading(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setLogoutLoading(false);
+    router.refresh();
+    router.replace("/");
+  }
+
   function handleKeywordResearch() {
     const keyword = keywordInput.trim();
     if (!keyword) {
@@ -374,7 +410,7 @@ export default function DashboardPage() {
       />
 
       <div className="relative z-10 flex min-h-screen w-full flex-col lg:flex-row">
-        <aside className="border-b border-white/10 bg-neutral-950/80 backdrop-blur-xl lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
+        <aside className="flex flex-col border-b border-white/10 bg-neutral-950/80 backdrop-blur-xl lg:min-h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between gap-3 px-4 py-4 lg:flex-col lg:items-stretch lg:gap-4 lg:px-4 lg:py-6">
             <a
               href="/"
@@ -390,7 +426,7 @@ export default function DashboardPage() {
           </div>
 
           <nav
-            className="flex gap-1 overflow-x-auto px-2 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] lg:flex-col lg:gap-1 lg:px-3 lg:pb-6 [&::-webkit-scrollbar]:hidden"
+            className="flex flex-1 gap-1 overflow-x-auto px-2 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] lg:flex-col lg:gap-1 lg:overflow-y-auto lg:px-3 lg:pb-4 [&::-webkit-scrollbar]:hidden"
             aria-label="Dashboard tools"
           >
             {NAV_ITEMS.map(({ id, label, Icon }) => {
@@ -412,6 +448,23 @@ export default function DashboardPage() {
               );
             })}
           </nav>
+
+          <div className="mt-auto border-t border-white/10 px-3 py-4 lg:px-4">
+            <p
+              className="truncate text-xs text-neutral-400"
+              title={userEmail || undefined}
+            >
+              {userEmail || "—"}
+            </p>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={logoutLoading}
+              className="mt-3 flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm font-medium text-neutral-200 transition hover:border-white/20 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {logoutLoading ? "Signing out…" : "Log out"}
+            </button>
+          </div>
         </aside>
 
         <main className="relative flex flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">

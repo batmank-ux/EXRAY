@@ -31,7 +31,7 @@ export default function Home() {
             </span>
           </a>
           <Link
-            href="/dashboard"
+            href="/login"
             className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 sm:px-5 sm:text-[0.9375rem]"
           >
             Get Started
@@ -60,7 +60,7 @@ export default function Home() {
 
           <div id="get-started" className="mt-10 flex w-full flex-col items-center gap-3 sm:mt-12">
             <Link
-              href="/dashboard"
+              href="/login"
               className="inline-flex w-full max-w-sm items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-violet-900/40 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 sm:w-auto sm:max-w-none sm:px-10 sm:py-4 sm:text-lg"
             >
               Start Spying For Free
