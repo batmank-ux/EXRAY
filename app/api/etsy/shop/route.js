@@ -1,175 +1,121 @@
+import { NextResponse } from "next/server";
+import { getJson } from "serpapi";
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-import { NextResponse } from "next/server";
-import {
-  getJson,
-  MissingApiKeyError,
-  InvalidArgumentError,
-  InvalidTimeoutError,
-} from "serpapi";
+// Helper: extract clean shop name from either a URL or a raw name
+function extractShopName(input) {
+  if (!input) return null;
+  const trimmed = input.trim();
 
-function isValidShopname(value) {
-  if (!value || value.length > 120) return false;
-  return !/[<>"]/.test(value);
+  const urlMatch = trimmed.match(/etsy\.com\/shop\/([^/?#]+)/i);
+  if (urlMatch) return urlMatch[1];
+
+  return trimmed.replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
-function prettifyShopSlug(slug) {
-  const s = slug.trim();
-  if (!s) return "Unknown shop";
-  return s
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+// Helper: extract price from snippet
+function parsePrice(text) {
+  if (!text) return null;
+  const match = String(text).match(/\$\s?([\d,]+(?:\.\d{2})?)/);
+  if (match) return `$${match[1]}`;
+  return null;
 }
 
-function formatPrice(value) {
-  if (value == null || value === "") return null;
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return `$${value.toFixed(2)}`;
-  }
-  const str = String(value).trim();
-  if (/^\$/.test(str)) return str;
-  if (/^\d/.test(str)) return `$${str}`;
-  return str || null;
+// Helper: extract shop-level review count (e.g. "627 reviews")
+function parseShopReviews(text) {
+  if (!text) return null;
+  const match = String(text).match(/([\d,]+)\s*(?:review|sales)/i);
+  if (match) return parseInt(match[1].replace(/,/g, ""), 10) || null;
+  return null;
 }
 
-function pickListingPrice(item) {
-  if (item.price != null && item.price !== "") {
-    const formatted = formatPrice(item.price);
-    if (formatted) return formatted;
-  }
-  return formatPrice(item.extracted_price);
-}
-
-function normalizeReviews(value) {
-  if (value == null) return null;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  const n = Number.parseInt(String(value).replace(/,/g, ""), 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-function normalizeRating(value) {
-  if (value == null) return null;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  const n = Number.parseFloat(String(value));
-  return Number.isFinite(n) ? n : null;
-}
-
-function extractShoppingResults(data, limit = 10) {
-  const rows = Array.isArray(data?.shopping_results)
-    ? data.shopping_results
-    : [];
-
-  const listings = [];
-  const seen = new Set();
-
-  for (const item of rows) {
-    if (listings.length >= limit) break;
-    if (!item || typeof item !== "object") continue;
-
-    const source = String(item.source ?? "");
-    if (!source.includes("Etsy")) continue;
-
-    const title = String(item.title ?? "").replace(/\s+/g, " ").trim();
-    if (!title) continue;
-
-    const dedupeKey =
-      String(item.link ?? item.product_link ?? "").trim() ||
-      `${title}|${item.extracted_price ?? pickListingPrice(item)}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-
-    listings.push({
-      title,
-      price: pickListingPrice(item),
-      rating: normalizeRating(item.rating),
-      reviews: normalizeReviews(item.reviews),
-    });
-  }
-
-  return listings;
-}
-
-function serpApiErrorMessage(err) {
-  if (typeof err === "string") {
-    try {
-      const parsed = JSON.parse(err);
-      if (parsed?.error) return String(parsed.error);
-    } catch {
-      if (err.length > 0 && err.length < 400) return err;
-    }
-    return "SerpApi returned an error response.";
-  }
-  if (err instanceof Error) return err.message;
-  return "SerpApi request failed.";
+// Helper: extract shop-level rating
+function parseShopRating(text) {
+  if (!text) return null;
+  const match = String(text).match(/([0-5](?:\.\d)?)\s*(?:out of 5|\/5|stars?)/i);
+  if (match) return parseFloat(match[1]);
+  return null;
 }
 
 export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const rawInput = searchParams.get("shopname");
+
+  if (!rawInput) {
+    return NextResponse.json(
+      { error: "Please provide a shop name or URL" },
+      { status: 400 }
+    );
+  }
+
+  const shopName = extractShopName(rawInput);
+
+  if (!shopName) {
+    return NextResponse.json(
+      { error: "Invalid shop name or URL" },
+      { status: 400 }
+    );
+  }
+
+  if (!process.env.SERPAPI_KEY) {
+    return NextResponse.json(
+      { error: "SerpApi key is missing" },
+      { status: 500 }
+    );
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const shopname = searchParams.get("shopname")?.trim();
+    // Single search call that targets the shop's listings
+    const response = await getJson({
+      engine: "google",
+      q: `site:etsy.com/listing "${shopName}"`,
+      api_key: process.env.SERPAPI_KEY,
+      num: 20,
+    });
 
-    if (!shopname || !isValidShopname(shopname)) {
-      return NextResponse.json(
-        { error: "Missing or invalid shopname query parameter." },
-        { status: 400 }
-      );
+    const organicResults = response.organic_results || [];
+
+    // Filter only real Etsy listings
+    const filtered = organicResults.filter((item) => {
+      const link = item.link || "";
+      return link.includes("etsy.com/listing");
+    });
+
+    // Try to find shop-level data from any snippet
+    let shopReviews = null;
+    let shopRating = null;
+    for (const item of organicResults) {
+      const text = item.snippet || "";
+      if (!shopReviews) shopReviews = parseShopReviews(text);
+      if (!shopRating) shopRating = parseShopRating(text);
+      if (shopReviews && shopRating) break;
     }
 
-    const apiKey = process.env.SERPAPI_KEY?.trim();
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "SERPAPI_KEY is not set in the environment." },
-        { status: 500 }
-      );
-    }
+    // Build clean listing objects
+    const listings = filtered.map((item) => {
+      const snippet = item.snippet || "";
+      const title = item.title || "Untitled";
 
-    let data;
-    try {
-      data = await getJson({
-        engine: "google_shopping",
-        q: `${shopname} etsy`,
-        api_key: apiKey,
-        timeout: 30_000,
-      });
-    } catch (err) {
-      if (err instanceof MissingApiKeyError) {
-        return NextResponse.json(
-          { error: "SerpApi API key is missing or invalid." },
-          { status: 500 }
-        );
-      }
-      if (err instanceof InvalidArgumentError || err instanceof InvalidTimeoutError) {
-        return NextResponse.json(
-          { error: err.message },
-          { status: 400 }
-        );
-      }
-      console.error("[api/etsy/shop] SerpApi request failed", err);
-      return NextResponse.json(
-        { error: serpApiErrorMessage(err) },
-        { status: 502 }
-      );
-    }
-
-    if (data?.error) {
-      const msg =
-        typeof data.error === "string"
-          ? data.error
-          : "SerpApi returned an error in the response body.";
-      return NextResponse.json({ error: msg }, { status: 502 });
-    }
-
-    const shopName = prettifyShopSlug(shopname);
-    const listings = extractShoppingResults(data, 10);
+      return {
+        title: title.replace(/\s*-\s*Etsy.*$/i, "").trim(),
+        link: item.link,
+        price: parsePrice(snippet) || null,
+      };
+    });
 
     return NextResponse.json({
-      shopName,
-      listings,
+      shopName: shopName,
+      shopUrl: `https://www.etsy.com/shop/${shopName}`,
+      totalFound: listings.length,
+      shopReviews: shopReviews,
+      shopRating: shopRating,
+      listings: listings,
     });
   } catch (error) {
-    console.error("[api/etsy/shop]", error);
+    console.error("SerpApi error:", error);
     return NextResponse.json(
-      { error: "Unexpected server error." },
+      { error: "Failed to fetch shop data", details: error.message },
       { status: 500 }
     );
   }
