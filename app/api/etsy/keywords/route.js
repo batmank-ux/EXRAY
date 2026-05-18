@@ -17,6 +17,47 @@ function parseRating(text) {
   return null;
 }
 
+// Calculate median of an array
+function median(arr) {
+  if (arr.length === 0) return null;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+// Calculate pricing strategy insights
+function analyzePricing(prices) {
+  if (prices.length === 0) return null;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const med = median(prices);
+  const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+  // Pricing strategy detection
+  let strategy = "Mixed";
+  const lowCount = prices.filter((p) => p < med * 0.7).length;
+  const highCount = prices.filter((p) => p > med * 1.5).length;
+
+  if (highCount > prices.length * 0.4) {
+    strategy = "Premium-heavy";
+  } else if (lowCount > prices.length * 0.4) {
+    strategy = "Race to bottom";
+  } else if (max / min < 2) {
+    strategy = "Tight cluster";
+  }
+
+  return {
+    min: min.toFixed(2),
+    max: max.toFixed(2),
+    median: med.toFixed(2),
+    average: avg.toFixed(2),
+    strategy: strategy,
+    dataPoints: prices.length,
+  };
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword");
@@ -51,7 +92,6 @@ export async function GET(request) {
       const topMeta = richSnippet.top || {};
       const bottomMeta = richSnippet.bottom || {};
 
-      // Combine all sources for max price/rating coverage
       const combinedText = [
         snippet,
         JSON.stringify(topMeta),
@@ -80,7 +120,6 @@ export async function GET(request) {
     const prices = listings.map((l) => l.price).filter((p) => p !== null);
     const ratings = listings.map((l) => l.rating).filter((r) => r !== null);
 
-    // Honest: only show averages when we have at least 3 data points
     const averagePrice = prices.length >= 3
       ? (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2)
       : null;
@@ -89,15 +128,23 @@ export async function GET(request) {
       ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
       : null;
 
+    // NEW: Pricing analysis
+    const pricingAnalysis = prices.length >= 3 ? analyzePricing(prices) : null;
+
+    // NEW: Difficulty Score (Easy/Medium/Hard)
     let competitionLevel = "Unknown";
+    let difficultyScore = null;
     const totalFound = listings.length;
 
     if (totalFound >= 15) {
       competitionLevel = "High";
+      difficultyScore = "Hard";
     } else if (totalFound >= 8) {
       competitionLevel = "Medium";
+      difficultyScore = "Medium";
     } else if (totalFound > 0) {
       competitionLevel = "Low";
+      difficultyScore = "Easy";
     }
 
     return NextResponse.json({
@@ -106,6 +153,8 @@ export async function GET(request) {
       averagePrice: averagePrice,
       averageRating: averageRating,
       competitionLevel: competitionLevel,
+      difficultyScore: difficultyScore,
+      pricingAnalysis: pricingAnalysis,
       listings: listings,
     });
   } catch (error) {

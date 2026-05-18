@@ -54,18 +54,32 @@ function formatPrice(value) {
   return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function CompetitionBadge({ level }) {
+function DifficultyBadge({ level }) {
   const value = String(level || "");
-  if (value === "High") {
-    return <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300 ring-1 ring-red-500/35">High</span>;
+  if (value === "Hard") {
+    return <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-bold text-red-300 ring-1 ring-red-500/35">Hard</span>;
   }
   if (value === "Medium") {
-    return <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-300 ring-1 ring-amber-500/35">Medium</span>;
+    return <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/35">Medium</span>;
   }
-  if (value === "Low") {
-    return <span className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/35">Low</span>;
+  if (value === "Easy") {
+    return <span className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/35">Easy</span>;
   }
   return <span className="text-neutral-500">--</span>;
+}
+
+function PricingStrategyBadge({ strategy }) {
+  const value = String(strategy || "");
+  if (value === "Premium-heavy") {
+    return <span className="inline-flex rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-300 ring-1 ring-violet-500/35">Premium-heavy</span>;
+  }
+  if (value === "Race to bottom") {
+    return <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300 ring-1 ring-red-500/35">Race to bottom</span>;
+  }
+  if (value === "Tight cluster") {
+    return <span className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/35">Tight cluster</span>;
+  }
+  return <span className="inline-flex rounded-full bg-neutral-500/15 px-3 py-1 text-xs font-medium text-neutral-300 ring-1 ring-neutral-500/35">Mixed</span>;
 }
 
 const NAV_ITEMS = [
@@ -127,7 +141,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <nav className="flex gap-1 overflow-x-auto px-2 pb-3 lg:flex-col lg:gap-1 lg:px-3 lg:pb-6 lg:flex-1" aria-label="Dashboard tools" style={{ scrollbarWidth: "none" }}>
+          <nav className="flex gap-1 overflow-x-auto px-2 pb-3 lg:flex-col lg:gap-1 lg:px-3 lg:pb-6 lg:flex-1" style={{ scrollbarWidth: "none" }}>
             {NAV_ITEMS.map(({ id, label, Icon, enabled }) => {
               const isActive = activeNav === id;
               return (
@@ -251,6 +265,34 @@ function ShopResults({ data }) {
         </div>
       </section>
 
+      {data.pricingAnalysis && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 backdrop-blur-sm sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-white">Pricing Strategy</h3>
+            <PricingStrategyBadge strategy={data.pricingAnalysis.strategy} />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Lowest</p>
+              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.min}</p>
+            </div>
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Median</p>
+              <p className="mt-1 text-lg font-bold text-violet-300">${data.pricingAnalysis.median}</p>
+            </div>
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Average</p>
+              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.average}</p>
+            </div>
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Highest</p>
+              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.max}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-neutral-500">Based on {data.pricingAnalysis.dataPoints} listings with visible prices</p>
+        </section>
+      )}
+
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-xl shadow-black/20 backdrop-blur-sm overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
           <h3 className="text-base font-semibold text-white">Top Listings</h3>
@@ -304,7 +346,7 @@ function KeywordResearch() {
     <div className="mx-auto w-full max-w-5xl">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Keyword Research</h1>
-        <p className="mt-2 text-sm text-neutral-400 sm:text-base">Discover competition and pricing trends for any Etsy keyword.</p>
+        <p className="mt-2 text-sm text-neutral-400 sm:text-base">Discover competition, pricing, and difficulty for any Etsy keyword.</p>
       </div>
 
       <form onSubmit={handleSearch} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-6">
@@ -350,11 +392,11 @@ function KeywordResults({ data }) {
     <div className="mt-6 space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Average Price</p>
+          <p className="text-xs uppercase tracking-wider text-neutral-500">Avg Price</p>
           <p className="mt-2 text-xl sm:text-2xl font-bold text-white">{data.averagePrice ? "$" + data.averagePrice : "--"}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Average Rating</p>
+          <p className="text-xs uppercase tracking-wider text-neutral-500">Avg Rating</p>
           <p className="mt-2 text-xl sm:text-2xl font-bold text-amber-400">{data.averageRating ? data.averageRating + " stars" : "--"}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
@@ -362,10 +404,38 @@ function KeywordResults({ data }) {
           <p className="mt-2 text-xl sm:text-2xl font-bold text-white">{data.totalFound}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Competition</p>
-          <div className="mt-2"><CompetitionBadge level={data.competitionLevel} /></div>
+          <p className="text-xs uppercase tracking-wider text-neutral-500">Difficulty</p>
+          <div className="mt-2"><DifficultyBadge level={data.difficultyScore} /></div>
         </div>
       </div>
+
+      {data.pricingAnalysis && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 backdrop-blur-sm sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-white">Pricing Strategy</h3>
+            <PricingStrategyBadge strategy={data.pricingAnalysis.strategy} />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Lowest</p>
+              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.min}</p>
+            </div>
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Median</p>
+              <p className="mt-1 text-lg font-bold text-violet-300">${data.pricingAnalysis.median}</p>
+            </div>
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Average</p>
+              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.average}</p>
+            </div>
+            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-neutral-500">Highest</p>
+              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.max}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-neutral-500">Based on {data.pricingAnalysis.dataPoints} listings with visible prices</p>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-xl shadow-black/20 backdrop-blur-sm overflow-hidden">
         <div className="border-b border-white/10 px-5 py-4">
