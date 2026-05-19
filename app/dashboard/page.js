@@ -1,463 +1,610 @@
-"use client";
+'use client'
+// app/page.js — EXRAY Landing Page
+// Theme: Near-black #080C10 + Ice Blue #7DD3F0
+// Font: Syne (display) + DM Sans (body) — add to layout.js (see bottom of file)
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
-function IconMagnifyingGlass({ className }) {
+// ─── THEME CONSTANTS ───────────────────────────────────────────
+const ICE   = '#7DD3F0'
+const BG    = '#080C10'
+const CARD  = '#0D1219'
+const BORDER = 'rgba(125, 211, 240, 0.10)'
+const BORDER_HOVER = 'rgba(125, 211, 240, 0.28)'
+const MUTED = '#4A5568'
+const TEXT  = '#E2E8F0'
+
+// ─── INLINE STYLES ─────────────────────────────────────────────
+const S = {
+  page: {
+    background: BG,
+    color: TEXT,
+    minHeight: '100vh',
+    fontFamily: "'DM Sans', sans-serif",
+    overflowX: 'hidden',
+  },
+
+  // NAV
+  nav: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 48px',
+    height: 64,
+    borderBottom: `1px solid ${BORDER}`,
+    position: 'sticky',
+    top: 0,
+    background: BG,
+    zIndex: 100,
+  },
+  logo: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: 22,
+    letterSpacing: 4,
+    color: '#fff',
+    textDecoration: 'none',
+  },
+  logoAccent: { color: ICE },
+  navLinks: { display: 'flex', alignItems: 'center', gap: 32 },
+  navLink: {
+    color: MUTED,
+    textDecoration: 'none',
+    fontSize: 14,
+    letterSpacing: 0.5,
+    transition: 'color 0.2s',
+  },
+  navCta: {
+    background: ICE,
+    color: BG,
+    padding: '8px 20px',
+    borderRadius: 6,
+    textDecoration: 'none',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: 0.5,
+    fontFamily: "'Syne', sans-serif",
+  },
+
+  // HERO
+  hero: {
+    maxWidth: 900,
+    margin: '0 auto',
+    padding: '120px 48px 100px',
+    textAlign: 'center',
+  },
+  eyebrow: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 4,
+    padding: '5px 14px',
+    fontSize: 11,
+    letterSpacing: 2,
+    color: ICE,
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+    marginBottom: 36,
+  },
+  h1: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: 'clamp(38px, 6vw, 72px)',
+    lineHeight: 1.08,
+    color: '#fff',
+    letterSpacing: -1,
+    margin: '0 0 28px',
+  },
+  h1Accent: { color: ICE },
+  subtext: {
+    fontSize: 18,
+    color: MUTED,
+    lineHeight: 1.7,
+    maxWidth: 560,
+    margin: '0 auto 52px',
+  },
+  heroActions: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    flexWrap: 'wrap',
+  },
+  primaryBtn: {
+    background: ICE,
+    color: BG,
+    padding: '14px 32px',
+    borderRadius: 6,
+    textDecoration: 'none',
+    fontSize: 14,
+    fontWeight: 700,
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: 1,
+    display: 'inline-block',
+  },
+  secondaryBtn: {
+    border: `1px solid ${BORDER_HOVER}`,
+    color: ICE,
+    padding: '14px 32px',
+    borderRadius: 6,
+    textDecoration: 'none',
+    fontSize: 14,
+    fontWeight: 500,
+    display: 'inline-block',
+    background: 'transparent',
+  },
+  hint: { color: MUTED, fontSize: 12, marginTop: 20 },
+
+  // STATS ROW
+  statsRow: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: 0,
+    borderTop: `1px solid ${BORDER}`,
+    borderBottom: `1px solid ${BORDER}`,
+    margin: '0 48px',
+  },
+  statItem: {
+    flex: 1,
+    maxWidth: 220,
+    padding: '36px 24px',
+    textAlign: 'center',
+    borderRight: `1px solid ${BORDER}`,
+  },
+  statNum: {
+    fontFamily: "'Syne', sans-serif",
+    fontSize: 36,
+    fontWeight: 800,
+    color: ICE,
+    letterSpacing: -1,
+    display: 'block',
+  },
+  statLabel: { color: MUTED, fontSize: 13, marginTop: 4 },
+
+  // FEATURES
+  section: { padding: '100px 48px', maxWidth: 1100, margin: '0 auto' },
+  sectionLabel: {
+    fontSize: 11,
+    letterSpacing: 3,
+    color: ICE,
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+    marginBottom: 16,
+  },
+  sectionH2: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: 'clamp(28px, 4vw, 48px)',
+    color: '#fff',
+    letterSpacing: -0.5,
+    margin: '0 0 60px',
+    maxWidth: 600,
+  },
+
+  // FEATURE CARDS
+  featureGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: 1,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  featureCard: {
+    background: CARD,
+    padding: '40px 36px',
+    borderRight: `1px solid ${BORDER}`,
+    borderBottom: `1px solid ${BORDER}`,
+  },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    border: `1px solid ${BORDER_HOVER}`,
+    borderRadius: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    fontSize: 18,
+  },
+  featureTitle: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+    fontSize: 18,
+    color: '#fff',
+    marginBottom: 12,
+  },
+  featureDesc: { color: MUTED, fontSize: 14, lineHeight: 1.7 },
+  featureTag: {
+    display: 'inline-block',
+    marginTop: 16,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: ICE,
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+  },
+
+  // HOW IT WORKS
+  stepsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 48,
+  },
+  stepNum: {
+    fontFamily: "'Syne', sans-serif",
+    fontSize: 48,
+    fontWeight: 800,
+    color: BORDER_HOVER,
+    lineHeight: 1,
+    marginBottom: 16,
+  },
+  stepTitle: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+    fontSize: 18,
+    color: '#fff',
+    marginBottom: 10,
+  },
+  stepDesc: { color: MUTED, fontSize: 14, lineHeight: 1.7 },
+
+  // COMPARE TABLE
+  compareWrap: { overflowX: 'auto', marginTop: 48 },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    fontSize: 14,
+  },
+  th: {
+    padding: '14px 24px',
+    textAlign: 'left',
+    borderBottom: `1px solid ${BORDER}`,
+    color: MUTED,
+    fontSize: 12,
+    letterSpacing: 1,
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+  },
+  thAccent: {
+    padding: '14px 24px',
+    textAlign: 'center',
+    borderBottom: `1px solid ${BORDER}`,
+    color: ICE,
+    fontSize: 12,
+    letterSpacing: 1,
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+    background: 'rgba(125, 211, 240, 0.04)',
+    borderLeft: `1px solid ${BORDER}`,
+    borderRight: `1px solid ${BORDER}`,
+  },
+  td: {
+    padding: '16px 24px',
+    borderBottom: `1px solid ${BORDER}`,
+    color: MUTED,
+    fontSize: 13,
+  },
+  tdAccent: {
+    padding: '16px 24px',
+    borderBottom: `1px solid ${BORDER}`,
+    textAlign: 'center',
+    background: 'rgba(125, 211, 240, 0.04)',
+    borderLeft: `1px solid ${BORDER}`,
+    borderRight: `1px solid ${BORDER}`,
+    color: ICE,
+    fontWeight: 600,
+  },
+
+  // CTA SECTION
+  ctaSection: {
+    margin: '0 48px 100px',
+    border: `1px solid ${BORDER}`,
+    borderRadius: 12,
+    padding: '80px 48px',
+    textAlign: 'center',
+    background: CARD,
+  },
+  ctaH2: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: 'clamp(28px, 4vw, 52px)',
+    color: '#fff',
+    letterSpacing: -1,
+    margin: '0 0 20px',
+  },
+  ctaSub: { color: MUTED, fontSize: 16, marginBottom: 40 },
+
+  // FOOTER
+  footer: {
+    borderTop: `1px solid ${BORDER}`,
+    padding: '32px 48px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  footerLogo: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: 16,
+    letterSpacing: 3,
+    color: '#fff',
+  },
+  footerText: { color: MUTED, fontSize: 12 },
+}
+
+// ─── FEATURE DATA ───────────────────────────────────────────────
+const features = [
+  {
+    icon: '🔍',
+    title: 'Shop Spy',
+    desc: 'Enter any Etsy shop name or URL. Get their top listings, pricing breakdown, and strategy — in seconds.',
+    tag: 'INSTANT INTEL',
+  },
+  {
+    icon: '📊',
+    title: 'Keyword Research',
+    desc: 'Find keywords your competitors rank for. See difficulty scores, avg prices, and competition levels before you list.',
+    tag: 'DIFFICULTY SCORE',
+  },
+  {
+    icon: '💰',
+    title: 'Pricing Strategy',
+    desc: 'Know if a niche is Premium-heavy, Race to the bottom, or Tight cluster. Price with confidence, not guesswork.',
+    tag: 'HONEST DATA',
+  },
+]
+
+const compare = [
+  { feature: 'Shop competitor spy',   exray: '✓', erank: '✓', marma: '✓' },
+  { feature: 'Keyword difficulty score', exray: '✓', erank: '✗', marma: '✗' },
+  { feature: 'Pricing strategy analysis', exray: '✓', erank: '✗', marma: '✗' },
+  { feature: 'Honest data (no fake metrics)', exray: '✓', erank: '✗', marma: '✗' },
+  { feature: 'No bloat UI',           exray: '✓', erank: '✗', marma: '✗' },
+  { feature: 'Price',                 exray: 'Free / $12', erank: '$10/mo', marma: '$19/mo' },
+]
+
+// ─── COMPONENT ──────────────────────────────────────────────────
+export default function LandingPage() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
+    <div style={S.page}>
 
-function IconKey({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="7.5" cy="15.5" r="5.5" />
-      <path d="m21 2-9.6 9.6" />
-      <path d="m15.5 7.5 3 3L22 7l-3-3" />
-    </svg>
-  );
-}
+      {/* NAV */}
+      <nav style={S.nav}>
+        <a href="/" style={S.logo}>
+          <span style={S.logoAccent}>EX</span>RAY
+        </a>
+        <div style={S.navLinks}>
+          <a href="#features" style={S.navLink}>Features</a>
+          <a href="#compare"  style={S.navLink}>Compare</a>
+          <a href="#pricing"  style={S.navLink}>Pricing</a>
+          <Link href="/login"    style={S.navLink}>Log in</Link>
+          <Link href="/signup"   style={S.navCta}>Get Started</Link>
+        </div>
+      </nav>
 
-function IconBolt({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
-    </svg>
-  );
-}
+      {/* HERO */}
+      <section style={S.hero}>
+        <div style={S.eyebrow}>
+          <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: ICE }} />
+          ETSY COMPETITOR INTELLIGENCE
+        </div>
+        <h1 style={S.h1}>
+          X-ray every<br />
+          <span style={S.h1Accent}>Etsy shop</span><br />
+          in seconds.
+        </h1>
+        <p style={S.subtext}>
+          Spy on any competitor. Decode their pricing. Find keywords they rank for.
+          Stop guessing — start selling.
+        </p>
+        <div style={S.heroActions}>
+          <Link href="/signup" style={S.primaryBtn}>START FOR FREE →</Link>
+          <Link href="/login"  style={S.secondaryBtn}>Log in</Link>
+        </div>
+        <p style={S.hint}>No credit card required</p>
+      </section>
 
-function IconGear({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-    </svg>
-  );
-}
+      {/* STATS */}
+      <div style={S.statsRow}>
+        {[
+          { num: '10s',  label: 'Time to first insight' },
+          { num: '$0',   label: 'To get started' },
+          { num: '100%', label: 'Honest data, no fluff' },
+          { num: '3',    label: 'Competitors beaten on price' },
+        ].map((s, i) => (
+          <div key={i} style={{ ...S.statItem, borderRight: i < 3 ? `1px solid ${BORDER}` : 'none' }}>
+            <span style={S.statNum}>{s.num}</span>
+            <span style={S.statLabel}>{s.label}</span>
+          </div>
+        ))}
+      </div>
 
-function Spinner({ className }) {
-  return (
-    <svg className={"animate-spin " + (className || "")} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-    </svg>
-  );
-}
+      {/* FEATURES */}
+      <section style={S.section} id="features">
+        <div style={S.sectionLabel}>WHAT EXRAY DOES</div>
+        <h2 style={S.sectionH2}>
+          Everything you need.<br />Nothing you don't.
+        </h2>
+        <div style={S.featureGrid}>
+          {features.map((f, i) => (
+            <div key={i} style={{
+              ...S.featureCard,
+              borderRight: i < features.length - 1 ? `1px solid ${BORDER}` : 'none',
+            }}>
+              <div style={S.featureIcon}>{f.icon}</div>
+              <div style={S.featureTitle}>{f.title}</div>
+              <p style={S.featureDesc}>{f.desc}</p>
+              <div style={S.featureTag}>{f.tag}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-function formatPrice(value) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+      {/* HOW IT WORKS */}
+      <section style={{ ...S.section, borderTop: `1px solid ${BORDER}` }}>
+        <div style={S.sectionLabel}>HOW IT WORKS</div>
+        <h2 style={S.sectionH2}>Three steps.<br />Real answers.</h2>
+        <div style={S.stepsGrid}>
+          {[
+            { n: '01', title: 'Enter a shop or keyword', desc: 'Type any Etsy shop name, URL, or keyword you want to research.' },
+            { n: '02', title: 'EXRAY scans it',          desc: 'We pull live data — listings, prices, ratings, competition — and process it instantly.' },
+            { n: '03', title: 'You get the edge',        desc: 'See exactly what works, what to price, and which keywords to target. Then go list.' },
+          ].map((s, i) => (
+            <div key={i}>
+              <div style={S.stepNum}>{s.n}</div>
+              <div style={S.stepTitle}>{s.title}</div>
+              <p style={S.stepDesc}>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-function DifficultyBadge({ level }) {
-  const value = String(level || "");
-  if (value === "Hard") {
-    return <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-bold text-red-300 ring-1 ring-red-500/35">Hard</span>;
-  }
-  if (value === "Medium") {
-    return <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/35">Medium</span>;
-  }
-  if (value === "Easy") {
-    return <span className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/35">Easy</span>;
-  }
-  return <span className="text-neutral-500">--</span>;
-}
+      {/* COMPARE */}
+      <section style={{ ...S.section, borderTop: `1px solid ${BORDER}` }} id="compare">
+        <div style={S.sectionLabel}>VS COMPETITORS</div>
+        <h2 style={S.sectionH2}>Why sellers switch<br />to EXRAY.</h2>
+        <div style={S.compareWrap}>
+          <table style={S.table}>
+            <thead>
+              <tr>
+                <th style={S.th}>Feature</th>
+                <th style={S.thAccent}>EXRAY</th>
+                <th style={S.th}>eRank</th>
+                <th style={S.th}>Marmalead</th>
+              </tr>
+            </thead>
+            <tbody>
+              {compare.map((row, i) => (
+                <tr key={i}>
+                  <td style={S.td}>{row.feature}</td>
+                  <td style={S.tdAccent}>{row.exray}</td>
+                  <td style={S.td}>{row.erank}</td>
+                  <td style={S.td}>{row.marma}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-function PricingStrategyBadge({ strategy }) {
-  const value = String(strategy || "");
-  if (value === "Premium-heavy") {
-    return <span className="inline-flex rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-300 ring-1 ring-violet-500/35">Premium-heavy</span>;
-  }
-  if (value === "Race to bottom") {
-    return <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300 ring-1 ring-red-500/35">Race to bottom</span>;
-  }
-  if (value === "Tight cluster") {
-    return <span className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/35">Tight cluster</span>;
-  }
-  return <span className="inline-flex rounded-full bg-neutral-500/15 px-3 py-1 text-xs font-medium text-neutral-300 ring-1 ring-neutral-500/35">Mixed</span>;
-}
-
-const NAV_ITEMS = [
-  { id: "shop-spy", label: "Shop Spy", Icon: IconMagnifyingGlass, enabled: true },
-  { id: "keyword-research", label: "Keyword Research", Icon: IconKey, enabled: true },
-  { id: "ai-action-plan", label: "AI Action Plan", Icon: IconBolt, enabled: false },
-  { id: "settings", label: "Settings", Icon: IconGear, enabled: false },
-];
-
-export default function DashboardPage() {
-  const [activeNav, setActiveNav] = useState("shop-spy");
-  const [userEmail, setUserEmail] = useState("");
-  const [logoutLoading, setLogoutLoading] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUserEmail(data?.user?.email || "");
-    };
-    getUser();
-  }, []);
-
-  const handleLogout = async () => {
-    setLogoutLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
-
-  return (
-    <div className="relative flex min-h-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(139,92,246,0.28),transparent_55%)]" aria-hidden />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_100%_50%,rgba(217,70,239,0.10),transparent_50%)]" aria-hidden />
-
-      <div className="relative z-10 flex min-h-screen w-full flex-col lg:flex-row">
-        <aside className="border-b border-white/10 bg-neutral-950/80 backdrop-blur-xl lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r flex flex-col">
-          <div className="flex items-center justify-between gap-3 px-4 py-4 lg:flex-col lg:items-stretch lg:gap-4 lg:px-4 lg:py-6">
-            <Link href="/" className="flex shrink-0 items-center gap-2.5 rounded-lg outline-none transition hover:opacity-90">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-violet-600/30">SX</span>
-              <span className="text-lg font-semibold tracking-tight text-white">ShopXray</span>
+      {/* PRICING */}
+      <section style={{ ...S.section, borderTop: `1px solid ${BORDER}` }} id="pricing">
+        <div style={S.sectionLabel}>PRICING</div>
+        <h2 style={S.sectionH2}>Simple.<br />No tricks.</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 700 }}>
+          {/* Free */}
+          <div style={{ ...S.featureCard, borderRadius: 10, border: `1px solid ${BORDER}` }}>
+            <div style={{ ...S.featureTitle, fontSize: 22 }}>Free</div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 40, fontWeight: 800, color: '#fff', margin: '12px 0' }}>
+              $0
+            </div>
+            <p style={{ ...S.featureDesc, marginBottom: 24 }}>5 searches per day. No card needed.</p>
+            {['Shop Spy', 'Keyword Research', 'Pricing Strategy', 'Difficulty Score'].map(f => (
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ color: ICE, fontWeight: 700 }}>✓</span>
+                <span style={{ color: MUTED, fontSize: 13 }}>{f}</span>
+              </div>
+            ))}
+            <Link href="/signup" style={{ ...S.secondaryBtn, display: 'block', textAlign: 'center', marginTop: 28 }}>
+              Get Started
             </Link>
-            <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-neutral-300 hover:bg-white/10 transition" aria-label="Menu">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
           </div>
 
-          {mobileMenuOpen && (
-            <div className="lg:hidden border-t border-white/10 px-4 py-3 bg-neutral-950/95">
-              <p className="text-xs text-neutral-400 mb-2 truncate">{userEmail}</p>
-              <button onClick={handleLogout} disabled={logoutLoading} className="w-full px-4 py-2 text-sm bg-white/5 hover:bg-white/10 rounded-lg transition disabled:opacity-50 text-neutral-200">
-                {logoutLoading ? "Logging out..." : "Log out"}
-              </button>
+          {/* Pro */}
+          <div style={{ ...S.featureCard, borderRadius: 10, border: `1px solid ${ICE}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <div style={{ ...S.featureTitle, fontSize: 22 }}>Pro</div>
+              <span style={{ background: ICE, color: BG, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 4, letterSpacing: 1, fontFamily: "'Syne', sans-serif" }}>
+                POPULAR
+              </span>
             </div>
-          )}
-
-          <nav className="flex gap-1 overflow-x-auto px-2 pb-3 lg:flex-col lg:gap-1 lg:px-3 lg:pb-6 lg:flex-1" style={{ scrollbarWidth: "none" }}>
-            {NAV_ITEMS.map(({ id, label, Icon, enabled }) => {
-              const isActive = activeNav === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => enabled && setActiveNav(id)}
-                  disabled={!enabled}
-                  className={"flex min-w-max shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition lg:w-full " + (isActive ? "bg-white/10 text-white ring-1 ring-white/10" : enabled ? "text-neutral-400 hover:bg-white/5 hover:text-neutral-200" : "text-neutral-600 cursor-not-allowed")}
-                >
-                  <Icon className="h-5 w-5 shrink-0 text-violet-400/90" />
-                  <span className="whitespace-nowrap">{label}</span>
-                  {!enabled && <span className="ml-auto text-[10px] bg-neutral-800 px-2 py-0.5 rounded">Soon</span>}
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="hidden lg:block p-4 border-t border-white/10">
-            <p className="text-xs text-neutral-500 mb-2 truncate">{userEmail}</p>
-            <button onClick={handleLogout} disabled={logoutLoading} className="w-full px-4 py-2 text-sm bg-white/5 hover:bg-white/10 rounded-lg transition disabled:opacity-50 text-neutral-200">
-              {logoutLoading ? "Logging out..." : "Log out"}
-            </button>
-          </div>
-        </aside>
-
-        <main className="relative flex flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
-          {activeNav === "shop-spy" && <ShopSpy />}
-          {activeNav === "keyword-research" && <KeywordResearch />}
-        </main>
-      </div>
-    </div>
-  );
-}
-
-function ShopSpy() {
-  const [shopName, setShopName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!shopName.trim()) return;
-    setLoading(true);
-    setError("");
-    setData(null);
-    try {
-      const res = await fetch("/api/etsy/shop?shopname=" + encodeURIComponent(shopName));
-      const json = await res.json();
-      if (!res.ok) setError(json.error || "Something went wrong");
-      else setData(json);
-    } catch (err) {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Shop Spy</h1>
-        <p className="mt-2 text-sm text-neutral-400 sm:text-base">Analyze any Etsy shop and surface real competitor insights.</p>
-      </div>
-
-      <form onSubmit={handleSearch} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-6">
-        <input
-          type="text"
-          value={shopName}
-          onChange={(e) => setShopName(e.target.value)}
-          placeholder="Paste Etsy shop URL or enter shop name..."
-          disabled={loading}
-          className="w-full rounded-xl border border-white/10 bg-neutral-950/80 px-4 py-3.5 text-base text-neutral-100 placeholder:text-neutral-500 outline-none transition focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30 disabled:opacity-60"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-900/35 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:py-4 sm:text-lg"
-        >
-          {loading ? (<><Spinner className="h-5 w-5 text-white" />Spying...</>) : "Spy Now"}
-        </button>
-      </form>
-
-      {error && !loading && (
-        <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-4 text-sm text-red-200" role="alert">{error}</div>
-      )}
-
-      {data && !loading && <ShopResults data={data} />}
-
-      {!data && !loading && !error && (
-        <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center sm:py-16">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
-            <IconMagnifyingGlass className="h-7 w-7 text-neutral-500" />
-          </div>
-          <p className="max-w-xs text-sm leading-relaxed text-neutral-500 sm:text-base">Enter a shop name or URL above to see competitor insights</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ShopResults({ data }) {
-  const listings = Array.isArray(data.listings) ? data.listings : [];
-
-  return (
-    <div className="mt-6 space-y-5">
-      <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 backdrop-blur-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{data.shopName}</h2>
-            <p className="mt-1 text-sm text-neutral-400">
-              <span className="font-medium text-neutral-200">{data.totalFound}</span> listings found
-              {data.shopReviews ? (<><span> &middot; </span><span className="font-medium text-neutral-200">{data.shopReviews.toLocaleString()}</span><span> shop reviews</span></>) : null}
-              {data.shopRating ? (<><span> &middot; </span><span className="font-medium text-amber-400">{data.shopRating} stars</span></>) : null}
-            </p>
-          </div>
-          <a href={data.shopUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-xl bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-neutral-200 transition text-center border border-white/10">
-            View Shop on Etsy
-          </a>
-        </div>
-      </section>
-
-      {data.pricingAnalysis && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 backdrop-blur-sm sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-white">Pricing Strategy</h3>
-            <PricingStrategyBadge strategy={data.pricingAnalysis.strategy} />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Lowest</p>
-              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.min}</p>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 40, fontWeight: 800, color: ICE, margin: '12px 0' }}>
+              $12<span style={{ fontSize: 16, color: MUTED, fontWeight: 400 }}>/mo</span>
             </div>
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Median</p>
-              <p className="mt-1 text-lg font-bold text-violet-300">${data.pricingAnalysis.median}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Average</p>
-              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.average}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Highest</p>
-              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.max}</p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-neutral-500">Based on {data.pricingAnalysis.dataPoints} listings with visible prices</p>
-        </section>
-      )}
-
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-xl shadow-black/20 backdrop-blur-sm overflow-hidden">
-        <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-base font-semibold text-white">Top Listings</h3>
-          <p className="text-xs text-neutral-500 mt-1">Most visible products from this shop based on search popularity</p>
-        </div>
-        <ul className="divide-y divide-white/5">
-          {listings.map((item, idx) => (
-            <li key={idx} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.02] transition">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-neutral-100 line-clamp-2">{item.title}</p>
-                <p className="mt-1 text-xs text-neutral-400">
-                  {item.price ? <span className="font-medium text-neutral-200">{item.price}</span> : <span className="text-neutral-600">Price not available</span>}
-                </p>
+            <p style={{ ...S.featureDesc, marginBottom: 24 }}>Unlimited searches. Full access.</p>
+            {['Unlimited searches', 'Priority data', 'All free features', 'Early access to new tools'].map(f => (
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ color: ICE, fontWeight: 700 }}>✓</span>
+                <span style={{ color: MUTED, fontSize: 13 }}>{f}</span>
               </div>
-              <a href={item.link} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 px-3 py-1.5 text-xs font-medium text-violet-300 transition text-center">
-                View on Etsy
-              </a>
-            </li>
-          ))}
-        </ul>
+            ))}
+            <Link href="/signup" style={{ ...S.primaryBtn, display: 'block', textAlign: 'center', marginTop: 28 }}>
+              Start Pro →
+            </Link>
+          </div>
+        </div>
       </section>
-    </div>
-  );
-}
 
-function KeywordResearch() {
-  const [keyword, setKeyword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!keyword.trim()) return;
-    setLoading(true);
-    setError("");
-    setData(null);
-    try {
-      const res = await fetch("/api/etsy/keywords?keyword=" + encodeURIComponent(keyword));
-      const json = await res.json();
-      if (!res.ok) setError(json.error || "Something went wrong");
-      else setData(json);
-    } catch (err) {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Keyword Research</h1>
-        <p className="mt-2 text-sm text-neutral-400 sm:text-base">Discover competition, pricing, and difficulty for any Etsy keyword.</p>
+      {/* CTA */}
+      <div style={S.ctaSection}>
+        <h2 style={S.ctaH2}>
+          Stop flying blind<br />on Etsy.
+        </h2>
+        <p style={S.ctaSub}>Join sellers who research before they list.</p>
+        <Link href="/signup" style={S.primaryBtn}>
+          START FOR FREE →
+        </Link>
+        <p style={{ ...S.hint, marginTop: 20 }}>No credit card · 5 free searches daily · Cancel anytime</p>
       </div>
 
-      <form onSubmit={handleSearch} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-6">
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Enter a keyword (e.g. minimalist wall art)"
-          disabled={loading}
-          className="w-full rounded-xl border border-white/10 bg-neutral-950/80 px-4 py-3.5 text-base text-neutral-100 placeholder:text-neutral-500 outline-none transition focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30 disabled:opacity-60"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-900/35 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:py-4 sm:text-lg"
-        >
-          {loading ? (<><Spinner className="h-5 w-5 text-white" />Researching...</>) : "Research"}
-        </button>
-      </form>
-
-      {error && !loading && (
-        <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-4 text-sm text-red-200" role="alert">{error}</div>
-      )}
-
-      {data && !loading && <KeywordResults data={data} />}
-
-      {!data && !loading && !error && (
-        <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center sm:py-16">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
-            <IconKey className="h-7 w-7 text-neutral-500" />
-          </div>
-          <p className="max-w-xs text-sm leading-relaxed text-neutral-500 sm:text-base">Enter a keyword above to see market data</p>
+      {/* FOOTER */}
+      <footer style={S.footer}>
+        <div style={S.footerLogo}>
+          <span style={{ color: ICE }}>EX</span>RAY
         </div>
-      )}
+        <div style={S.footerText}>© 2025 EXRAY. Built for Etsy sellers.</div>
+        <div style={{ display: 'flex', gap: 24 }}>
+          <a href="#" style={{ ...S.navLink, fontSize: 12 }}>Privacy</a>
+          <a href="#" style={{ ...S.navLink, fontSize: 12 }}>Terms</a>
+        </div>
+      </footer>
+
     </div>
-  );
+  )
 }
 
-function KeywordResults({ data }) {
-  const listings = Array.isArray(data.listings) ? data.listings : [];
+/*
+─────────────────────────────────────────────
+  SETUP INSTRUCTIONS
+─────────────────────────────────────────────
 
-  return (
-    <div className="mt-6 space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Avg Price</p>
-          <p className="mt-2 text-xl sm:text-2xl font-bold text-white">{data.averagePrice ? "$" + data.averagePrice : "--"}</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Avg Rating</p>
-          <p className="mt-2 text-xl sm:text-2xl font-bold text-amber-400">{data.averageRating ? data.averageRating + " stars" : "--"}</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Total Listings</p>
-          <p className="mt-2 text-xl sm:text-2xl font-bold text-white">{data.totalFound}</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Difficulty</p>
-          <div className="mt-2"><DifficultyBadge level={data.difficultyScore} /></div>
-        </div>
-      </div>
+1. PASTE THIS FILE → app/page.js (replace entire file)
 
-      {data.pricingAnalysis && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 backdrop-blur-sm sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-white">Pricing Strategy</h3>
-            <PricingStrategyBadge strategy={data.pricingAnalysis.strategy} />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Lowest</p>
-              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.min}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Median</p>
-              <p className="mt-1 text-lg font-bold text-violet-300">${data.pricingAnalysis.median}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Average</p>
-              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.average}</p>
-            </div>
-            <div className="rounded-xl bg-neutral-950/60 border border-white/5 p-3">
-              <p className="text-xs uppercase tracking-wider text-neutral-500">Highest</p>
-              <p className="mt-1 text-lg font-bold text-white">${data.pricingAnalysis.max}</p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-neutral-500">Based on {data.pricingAnalysis.dataPoints} listings with visible prices</p>
-        </section>
-      )}
+2. ADD FONTS → app/layout.js
+   Replace your current font import with:
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-xl shadow-black/20 backdrop-blur-sm overflow-hidden">
-        <div className="border-b border-white/10 px-5 py-4">
-          <h3 className="text-base font-semibold text-white">Top Listings</h3>
-          <p className="text-xs text-neutral-500 mt-1">Top ranking products for &quot;{data.keyword}&quot; on Etsy</p>
-        </div>
-        <ul className="divide-y divide-white/5">
-          {listings.map((item, idx) => (
-            <li key={idx} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.02] transition">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-neutral-100 line-clamp-2">{item.title}</p>
-                <p className="mt-1 text-xs text-neutral-400">
-                  {formatPrice(item.price) ? <span className="font-medium text-neutral-200">{formatPrice(item.price)}</span> : <span className="text-neutral-600">Price not available</span>}
-                </p>
-              </div>
-              <a href={item.link} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 px-3 py-1.5 text-xs font-medium text-violet-300 transition text-center">
-                View on Etsy
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-  );
-}
+   import { Syne, DM_Sans } from 'next/font/google'
+
+   const syne = Syne({
+     subsets: ['latin'],
+     weight: ['400', '600', '700', '800'],
+     variable: '--font-syne',
+   })
+   const dmSans = DM_Sans({
+     subsets: ['latin'],
+     weight: ['400', '500', '600'],
+     variable: '--font-dm-sans',
+   })
+
+   Then in your <body> tag:
+   className={`${syne.variable} ${dmSans.variable}`}
+
+3. UPDATE METADATA → app/layout.js
+   export const metadata = {
+     title: 'EXRAY — Etsy Competitor Intelligence',
+     description: 'X-ray any Etsy shop. Spy on competitors, find keywords, decode pricing — in seconds.',
+   }
+
+4. TAILWIND (optional) — all styles are inline so
+   Tailwind not required for this page.
+   But keep tailwind for dashboard/auth pages.
+
+5. git add . && git commit -m "feat: EXRAY landing page ice theme"
+   git push
+─────────────────────────────────────────────
+*/
