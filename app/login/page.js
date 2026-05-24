@@ -1,53 +1,36 @@
 "use client";
-// app/login/page.js — EXRAY Login v3
-// Split-screen · Premium intelligence platform · Matches landing + dashboard
+// app/login/page.js — EXRAY Login v4
+// True centered layout · Mobile-first · Premium intelligence platform
  
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
  
 const C = {
-  bg:      "#06090D",
-  s1:      "#090E14",
-  s2:      "#0C1219",
-  s3:      "#0F1720",
-  ice:     "#7DD3F0",
-  iceDim:  "rgba(125,211,240,0.4)",
-  iceFaint:"rgba(125,211,240,0.055)",
-  border:  "rgba(255,255,255,0.05)",
-  borderA: "rgba(125,211,240,0.14)",
-  text:    "#6B8090",
-  textMid: "#9AAEBB",
-  textHi:  "#E0ECF4",
-  muted:   "#243040",
-  green:   "#3DD68C",
-  amber:   "#F5C842",
-  font:    "'DM Sans', system-ui, sans-serif",
-  mono:    "'JetBrains Mono', monospace",
+  bg:        "#04070B",
+  s1:        "#070D14",
+  s2:        "#0B1420",
+  cyan:      "#7DD3F0",
+  cyanDim:   "rgba(125,211,240,0.55)",
+  cyanFaint: "rgba(125,211,240,0.08)",
+  border:    "rgba(125,211,240,0.09)",
+  borderA:   "rgba(125,211,240,0.22)",
+  text:      "#8BAABB",
+  textMid:   "#B8CDD8",
+  textHi:    "#EAF4FA",
+  muted:     "#3D5668",
+  green:     "#3DC98A",
+  font:      "'DM Sans', system-ui, sans-serif",
+  mono:      "'JetBrains Mono', monospace",
 };
- 
-const inputStyle = {
-  width:"100%", display:"block",
-  background:C.s2, border:`1px solid ${C.border}`,
-  borderRadius:7, padding:"11px 14px",
-  color:C.textHi, fontSize:14, fontFamily:C.font,
-  outline:"none", transition:"border-color .15s, box-shadow .15s",
-};
- 
-// Mini dashboard preview data
-const previewInsights = [
-  { label:"PRICING INTELLIGENCE", title:"Premium-heavy niche detected", sub:"Top 10 listings avg $2,217 · Median $881", color:C.ice },
-  { label:"DIFFICULTY SCORE",     title:"Keyword: minimalist ring",      sub:"Competition: Hard · Entry window: $38–$95", color:C.amber },
-  { label:"OPPORTUNITY",          title:"Gap detected in stacking rings", sub:"Medium difficulty · Underserved demand", color:C.green },
-];
  
 export default function LoginPage() {
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [gLoading, setGLoading]   = useState(false);
-  const [error, setError]         = useState("");
-  const [focused, setFocused]     = useState("");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [gLoad, setGLoad]       = useState(false);
+  const [error, setError]       = useState("");
+  const [focused, setFocused]   = useState("");
  
   const handleLogin = async e => {
     e.preventDefault();
@@ -58,218 +41,198 @@ export default function LoginPage() {
   };
  
   const handleGoogle = async () => {
-    setGLoading(true); setError("");
+    setGLoad(true); setError("");
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: window.location.origin + "/auth/callback" },
     });
-    if (error) { setError(error.message); setGLoading(false); }
+    if (error) { setError(error.message); setGLoad(false); }
   };
  
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{background:${C.bg};margin:0}
-        a{text-decoration:none;color:inherit}
-        @keyframes exFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes exSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes exSpin{to{transform:rotate(360deg)}}
-        .ex-fade{animation:exFade .4s ease forwards}
-        .ex-slide{animation:exSlide .5s ease forwards}
-        .g-btn:hover{background:rgba(255,255,255,0.88)!important}
-        .sub-btn:hover:not(:disabled){background:rgba(125,211,240,0.1)!important;border-color:rgba(125,211,240,0.3)!important}
-        .ghost-link:hover{color:${C.ice}!important}
-        .insight-card{transition:border-color .2s,transform .2s}
-        .insight-card:hover{border-color:rgba(125,211,240,0.12)!important;transform:translateX(2px)}
-        input:focus{border-color:${C.borderA}!important;box-shadow:0 0 0 3px rgba(125,211,240,0.06)!important}
-        @media(max-width:768px){.split-left{display:none!important}.split-right{width:100%!important;max-width:100%!important;padding:32px 24px!important}}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@500;600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body { background: ${C.bg}; font-family: ${C.font}; -webkit-font-smoothing: antialiased; }
+        a { text-decoration: none; color: inherit; }
+        @keyframes exSpin { to { transform: rotate(360deg); } }
+        @keyframes exFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page {
+          min-height: 100vh;
+          min-height: 100dvh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px 16px;
+          background: ${C.bg};
+          position: relative;
+          overflow: hidden;
+        }
+        /* Subtle ambient glow */
+        .page::before {
+          content: '';
+          position: fixed;
+          top: -20%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 600px;
+          height: 400px;
+          background: radial-gradient(ellipse, rgba(125,211,240,0.04) 0%, transparent 70%);
+          pointer-events: none;
+        }
+        .card {
+          width: 100%;
+          max-width: 440px;
+          background: ${C.s1};
+          border: 1px solid ${C.border};
+          border-radius: 14px;
+          padding: 40px 36px;
+          position: relative;
+          animation: exFade .4s ease forwards;
+        }
+        @media (max-width: 480px) {
+          .card { padding: 32px 24px; border-radius: 12px; }
+        }
+        @media (max-width: 360px) {
+          .card { padding: 28px 18px; }
+        }
+        .logo-wrap { text-align: center; margin-bottom: 32px; }
+        .logo { font-family: ${C.font}; font-weight: 800; font-size: 22px; letter-spacing: 5px; color: ${C.textHi}; }
+        .logo span { color: ${C.cyan}; }
+        .logo-sub { font-size: 9px; color: ${C.muted}; letter-spacing: 2.5px; margin-top: 5px; font-weight: 700; }
+        .head { margin-bottom: 28px; }
+        .head-tag { font-size: 9px; letter-spacing: 2.5px; color: ${C.cyanDim}; font-weight: 700; margin-bottom: 10px; }
+        .head-h1 { font-size: 22px; font-weight: 800; color: ${C.textHi}; letter-spacing: -0.4px; line-height: 1.15; margin-bottom: 7px; }
+        .head-sub { font-size: 13.5px; color: ${C.text}; line-height: 1.6; }
+        .g-btn {
+          width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+          padding: 11px; border-radius: 8px; border: none;
+          background: #fff; color: #1a1a1a;
+          font-size: 13.5px; font-weight: 600; font-family: ${C.font};
+          cursor: pointer; transition: background .15s; margin-bottom: 20px;
+        }
+        .g-btn:hover { background: rgba(255,255,255,0.88); }
+        .g-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .divider {
+          display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+        }
+        .divider-line { flex: 1; height: 1px; background: ${C.border}; }
+        .divider-text { font-size: 10.5px; color: ${C.muted}; font-weight: 600; letter-spacing: 1px; }
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 11px; letter-spacing: 1.5px; color: ${C.textMid}; font-weight: 700; margin-bottom: 7px; }
+        .field input {
+          width: 100%; background: ${C.s2}; border: 1px solid ${C.border};
+          border-radius: 7px; padding: 11px 14px;
+          color: ${C.textHi}; font-size: 14px; font-family: ${C.font};
+          outline: none; transition: border-color .15s, box-shadow .15s;
+          -webkit-appearance: none;
+        }
+        .field input:focus {
+          border-color: ${C.borderA};
+          box-shadow: 0 0 0 3px rgba(125,211,240,0.07);
+        }
+        .field input.active { border-color: ${C.borderA}; }
+        .forgot { text-align: right; margin-bottom: 20px; }
+        .forgot a { font-size: 12px; color: ${C.muted}; transition: color .15s; }
+        .forgot a:hover { color: ${C.cyan}; }
+        .sub-btn {
+          width: 100%; padding: 12px; border-radius: 7px;
+          border: 1px solid ${C.borderA}; background: ${C.cyanFaint};
+          color: ${C.cyan}; font-size: 13.5px; font-weight: 700;
+          font-family: ${C.font}; letter-spacing: 0.5px;
+          cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+          transition: all .15s;
+        }
+        .sub-btn:hover:not(:disabled) { background: rgba(125,211,240,0.13); border-color: rgba(125,211,240,0.35); }
+        .sub-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .err-box {
+          background: rgba(224,96,85,0.07); border: 1px solid rgba(224,96,85,0.22);
+          border-radius: 7px; padding: 11px 14px; color: #F0A098;
+          font-size: 13px; margin-bottom: 14px;
+        }
+        .footer-link { text-align: center; font-size: 13px; color: ${C.muted}; margin-top: 22px; }
+        .footer-link a { color: ${C.cyanDim}; font-weight: 600; transition: color .15s; }
+        .footer-link a:hover { color: ${C.cyan}; }
+        .spinner {
+          width: 14px; height: 14px; flex-shrink: 0;
+          animation: exSpin .7s linear infinite;
+        }
       `}</style>
  
-      <div style={{display:"flex",minHeight:"100vh",background:C.bg,fontFamily:C.font}}>
- 
-        {/* ── LEFT — Intelligence panel ── */}
-        <div className="split-left" style={{
-          flex:1, background:C.s1,
-          borderRight:`1px solid ${C.border}`,
-          padding:"48px 52px",
-          display:"flex", flexDirection:"column",
-          justifyContent:"space-between",
-          position:"relative", overflow:"hidden",
-        }}>
- 
-          {/* Subtle background texture */}
-          <div style={{
-            position:"absolute", inset:0, pointerEvents:"none",
-            background:`
-              radial-gradient(ellipse at 20% 20%, rgba(125,211,240,0.03) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 80%, rgba(125,211,240,0.02) 0%, transparent 50%)
-            `,
-          }}/>
+      <div className="page">
+        <div className="card">
  
           {/* Logo */}
-          <div className="ex-slide" style={{position:"relative"}}>
+          <div className="logo-wrap">
             <Link href="/">
-              <div style={{fontFamily:C.font,fontWeight:800,fontSize:18,letterSpacing:5,color:C.textHi}}>
-                <span style={{color:C.ice}}>EX</span>RAY
-              </div>
-              <div style={{fontSize:9,color:C.muted,letterSpacing:2.5,marginTop:4,fontWeight:600}}>INTELLIGENCE</div>
+              <div className="logo"><span>EX</span>RAY</div>
+              <div className="logo-sub">ETSY INTELLIGENCE</div>
             </Link>
           </div>
  
-          {/* Main copy */}
-          <div className="ex-fade" style={{position:"relative"}}>
-            <div style={{fontSize:10,letterSpacing:3,color:C.iceDim,fontWeight:700,marginBottom:16}}>WHAT YOU'RE RETURNING TO</div>
-            <h2 style={{fontFamily:C.font,fontWeight:800,fontSize:34,color:C.textHi,letterSpacing:-1,lineHeight:1.1,marginBottom:16,maxWidth:360}}>
-              Your competitor intelligence is waiting.
-            </h2>
-            <p style={{fontSize:14.5,color:C.text,lineHeight:1.8,maxWidth:360}}>
-              Every session you run with EXRAY gives you an edge your competitors don't have. Access your market intelligence dashboard.
-            </p>
- 
-            {/* Live preview cards */}
-            <div style={{marginTop:36,display:"flex",flexDirection:"column",gap:10}}>
-              {previewInsights.map((ins,i)=>(
-                <div key={i} className="insight-card" style={{
-                  background:C.s2, border:`1px solid ${C.border}`,
-                  borderRadius:9, padding:"14px 16px",
-                  animationDelay:`${i*0.1}s`,
-                }}>
-                  <div style={{fontSize:8.5,letterSpacing:2,color:ins.color,fontWeight:700,opacity:0.7,marginBottom:5}}>{ins.label}</div>
-                  <div style={{fontSize:13,fontWeight:600,color:C.textHi,marginBottom:3}}>{ins.title}</div>
-                  <div style={{fontFamily:C.mono,fontSize:10.5,color:C.text}}>{ins.sub}</div>
-                </div>
-              ))}
-            </div>
+          {/* Heading */}
+          <div className="head">
+            <div className="head-tag">ACCESS YOUR DASHBOARD</div>
+            <h1 className="head-h1">Continue your market intelligence.</h1>
+            <p className="head-sub">Log in to access your competitor research.</p>
           </div>
  
-          {/* Bottom trust line */}
-          <div style={{position:"relative",fontSize:11,color:C.muted,lineHeight:1.6}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <div style={{width:5,height:5,borderRadius:"50%",background:C.green,flexShrink:0}}/>
-              <span>Live Etsy listing data · Updated in real time</span>
-            </div>
-            <div>Built for sellers who research before they list.</div>
+          {/* Google */}
+          <button className="g-btn" onClick={handleGoogle} disabled={gLoad || loading}>
+            <svg width={17} height={17} viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            {gLoad ? "Connecting…" : "Continue with Google"}
+          </button>
+ 
+          {/* Divider */}
+          <div className="divider">
+            <div className="divider-line"/>
+            <span className="divider-text">OR</span>
+            <div className="divider-line"/>
           </div>
-        </div>
  
-        {/* ── RIGHT — Auth form ── */}
-        <div className="split-right" style={{
-          width:420, flexShrink:0,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          padding:"48px 44px",
-          background:C.bg,
-        }}>
-          <div className="ex-fade" style={{width:"100%",maxWidth:360}}>
- 
-            {/* Mobile logo */}
-            <div style={{display:"none",marginBottom:32}} className="mobile-logo">
-              <Link href="/">
-                <div style={{fontWeight:800,fontSize:18,letterSpacing:5,color:C.textHi}}>
-                  <span style={{color:C.ice}}>EX</span>RAY
-                </div>
-              </Link>
+          {/* Form */}
+          <form onSubmit={handleLogin}>
+            <div className="field">
+              <label>EMAIL</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required
+                placeholder="you@example.com"
+                className={focused==="email"?"active":""}
+                onFocus={()=>setFocused("email")} onBlur={()=>setFocused("")}
+              />
             </div>
- 
-            <div style={{marginBottom:32}}>
-              <div style={{fontSize:9.5,letterSpacing:2.5,color:C.iceDim,fontWeight:700,marginBottom:10}}>ACCESS YOUR DASHBOARD</div>
-              <h1 style={{fontFamily:C.font,fontWeight:800,fontSize:24,color:C.textHi,letterSpacing:-0.5,lineHeight:1.15,marginBottom:8}}>
-                Continue your market intelligence.
-              </h1>
-              <p style={{fontSize:13.5,color:C.text,lineHeight:1.7}}>Log in to access your competitor research.</p>
+            <div className="field">
+              <label>PASSWORD</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required
+                placeholder="••••••••"
+                className={focused==="pass"?"active":""}
+                onFocus={()=>setFocused("pass")} onBlur={()=>setFocused("")}
+              />
             </div>
- 
-            {/* Google */}
-            <button type="button" onClick={handleGoogle} disabled={gLoading||loading} className="g-btn"
-              style={{
-                width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                padding:"11px",borderRadius:7,border:"none",
-                background:"#fff",color:"#1a1a1a",
-                fontSize:13.5,fontWeight:600,fontFamily:C.font,
-                cursor:gLoading||loading?"not-allowed":"pointer",
-                opacity:gLoading||loading?0.6:1,
-                transition:"background .15s",marginBottom:20,
-              }}>
-              <svg width={17} height={17} viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              {gLoading ? "Connecting…" : "Continue with Google"}
-            </button>
- 
-            {/* Divider */}
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-              <div style={{flex:1,height:1,background:C.border}}/>
-              <span style={{fontSize:10.5,color:C.muted,fontWeight:600,letterSpacing:1}}>OR</span>
-              <div style={{flex:1,height:1,background:C.border}}/>
+            <div className="forgot">
+              <Link href="/forgot-password">Forgot password?</Link>
             </div>
- 
-            {/* Form */}
-            <form onSubmit={handleLogin}>
-              <div style={{marginBottom:14}}>
-                <label style={{display:"block",fontSize:11,letterSpacing:1.5,color:C.textMid,fontWeight:700,marginBottom:7}}>EMAIL</label>
-                <input
-                  type="email" value={email} onChange={e=>setEmail(e.target.value)} required
-                  placeholder="you@example.com"
-                  onFocus={()=>setFocused("email")} onBlur={()=>setFocused("")}
-                  style={{...inputStyle,borderColor:focused==="email"?C.borderA:C.border}}
-                />
-              </div>
- 
-              <div style={{marginBottom:6}}>
-                <label style={{display:"block",fontSize:11,letterSpacing:1.5,color:C.textMid,fontWeight:700,marginBottom:7}}>PASSWORD</label>
-                <input
-                  type="password" value={password} onChange={e=>setPassword(e.target.value)} required
-                  placeholder="••••••••"
-                  onFocus={()=>setFocused("password")} onBlur={()=>setFocused("")}
-                  style={{...inputStyle,borderColor:focused==="password"?C.borderA:C.border}}
-                />
-              </div>
- 
-              <div style={{textAlign:"right",marginBottom:20}}>
-                <Link href="/forgot-password" className="ghost-link"
-                  style={{fontSize:12,color:C.muted,transition:"color .15s"}}>
-                  Forgot password?
-                </Link>
-              </div>
- 
-              {error&&(
-                <div style={{background:"rgba(229,99,90,0.06)",border:"1px solid rgba(229,99,90,0.18)",borderRadius:7,padding:"11px 14px",color:"#F4A09A",fontSize:13,marginBottom:16,fontFamily:C.font}}>
-                  {error}
-                </div>
+            {error && <div className="err-box">{error}</div>}
+            <button type="submit" className="sub-btn" disabled={loading || gLoad}>
+              {loading && (
+                <svg className="spinner" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="rgba(125,211,240,0.2)" strokeWidth="3"/>
+                  <path fill="#7DD3F0" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
               )}
+              {loading ? "Logging in…" : "Log in"}
+            </button>
+          </form>
  
-              <button type="submit" disabled={loading||gLoading} className="sub-btn"
-                style={{
-                  width:"100%",padding:"12px",borderRadius:7,
-                  border:`1px solid ${C.borderA}`,
-                  background:C.iceFaint,color:C.ice,
-                  fontSize:13.5,fontWeight:600,fontFamily:C.font,
-                  letterSpacing:0.5,cursor:loading||gLoading?"not-allowed":"pointer",
-                  opacity:loading||gLoading?0.6:1,
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-                  transition:"all .15s",
-                }}>
-                {loading&&(
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" style={{animation:"exSpin .7s linear infinite"}}>
-                    <circle cx="12" cy="12" r="10" stroke="rgba(125,211,240,0.2)" strokeWidth="3"/>
-                    <path fill={C.ice} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                )}
-                {loading?"Logging in…":"Log in"}
-              </button>
-            </form>
- 
-            <p style={{textAlign:"center",fontSize:13,color:C.muted,marginTop:24,fontFamily:C.font}}>
-              No account?{" "}
-              <Link href="/signup" className="ghost-link" style={{color:C.iceDim,fontWeight:600,transition:"color .15s"}}>
-                Create one →
-              </Link>
-            </p>
- 
+          <div className="footer-link">
+            No account?{" "}
+            <Link href="/signup">Create one →</Link>
           </div>
         </div>
       </div>
