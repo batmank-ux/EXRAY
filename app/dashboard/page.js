@@ -1,10 +1,11 @@
 "use client";
-// app/dashboard/page.js — EXRAY Dashboard v9
-// Mobile-first layout: bottom tab bar on mobile, sidebar on desktop
+// app/dashboard/page.js — EXRAY Dashboard v10
+// AI Action Plan enabled · Mobile-first · Signal rings
  
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import AIActionPlan from "@/app/dashboard/components/AIActionPlan";
  
 const C = {
   bg:        "#04070B",
@@ -33,22 +34,17 @@ const G = `
   html, body { height: 100%; }
   body { background: #04070B; margin: 0; -webkit-font-smoothing: antialiased; overflow: hidden; }
   a { text-decoration: none; color: inherit; }
- 
   @keyframes exSpin  { to { transform: rotate(360deg); } }
   @keyframes exFade  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   @keyframes exPulse { 0%,100%{opacity:1} 50%{opacity:0.15} }
   @keyframes exBlink { 0%,90%,100%{opacity:0.4} 45%{opacity:1} }
   .ex-fade { animation: exFade .4s ease forwards; }
- 
-  /* Desktop sidebar layout */
   .layout { display: flex; height: 100vh; height: 100dvh; }
   .sidebar { width: 216px; flex-shrink: 0; background: #070D14; border-right: 1px solid rgba(125,211,240,0.09); display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow-y: auto; }
   .right-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .top-header { height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #070D14; border-bottom: 1px solid rgba(125,211,240,0.09); }
   .main-content { flex: 1; overflow-y: auto; background: #04070B; }
   .bottom-nav { display: none; }
- 
-  /* Mobile layout */
   @media (max-width: 680px) {
     body { overflow: hidden; }
     .layout { flex-direction: column; }
@@ -65,10 +61,7 @@ const G = `
       padding-bottom: env(safe-area-inset-bottom);
       z-index: 100;
     }
-    .mobile-content-pad { padding: 20px 16px; }
   }
- 
-  /* Interactions */
   .nb { transition: background .15s, border-color .15s, color .15s; cursor: pointer; }
   .nb:hover { background: rgba(125,211,240,0.06) !important; color: #EAF4FA !important; }
   .nb.on { background: rgba(125,211,240,0.1) !important; border-color: rgba(125,211,240,0.24) !important; color: #EAF4FA !important; }
@@ -85,20 +78,15 @@ const G = `
   input:focus { outline: none !important; border-color: rgba(125,211,240,0.28) !important; box-shadow: 0 0 0 3px rgba(125,211,240,0.07) !important; }
   ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-thumb { background: rgba(125,211,240,0.14); border-radius: 4px; }
- 
-  /* Mobile nav tab button */
   .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 20px; background: transparent; border: none; cursor: pointer; transition: all .15s; flex: 1; }
   .tab-btn .tab-label { font-size: 10px; font-weight: 500; color: #3D5668; letter-spacing: 0.3px; font-family: 'DM Sans', sans-serif; }
   .tab-btn.active .tab-label { color: #7DD3F0; }
   .tab-btn.disabled { opacity: 0.3; cursor: not-allowed; }
- 
-  /* Content area responsive */
   .content-inner { max-width: 900px; margin: 0 auto; padding: 24px 32px; }
   @media (max-width: 680px) { .content-inner { padding: 20px 16px; } }
   @media (max-width: 400px) { .content-inner { padding: 16px 12px; } }
 `;
  
-// ─── ICONS ────────────────────────────────────────────────────────
 const IcoScan = (c="#546A7A",s=15) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/>
@@ -128,7 +116,6 @@ const Spin = () => (
   </svg>
 );
  
-// ─── SIGNAL RING ──────────────────────────────────────────────────
 function SignalRing({value=0,color="#7DD3F0",size=60,pulse=false}) {
   const r=size/2-5, circ=2*Math.PI*r, off=circ*(1-Math.min(1,value));
   const gid="sr"+Math.round(value*100)+color.replace(/\W/g,"").slice(0,8);
@@ -160,7 +147,6 @@ function SignalRing({value=0,color="#7DD3F0",size=60,pulse=false}) {
   );
 }
  
-// ─── SIGNAL CARD ──────────────────────────────────────────────────
 function SignalCard({signal,delay=0}) {
   const [v,setV]=useState(false);
   useEffect(()=>{const t=setTimeout(()=>setV(true),delay);return()=>clearTimeout(t);},[delay]);
@@ -179,7 +165,6 @@ function SignalCard({signal,delay=0}) {
   );
 }
  
-// ─── HELPERS ──────────────────────────────────────────────────────
 const stratMeta = s => ({
   "Premium-heavy":  {color:C.cyan,  bg:"rgba(125,211,240,0.08)", border:"rgba(125,211,240,0.22)"},
   "Race to bottom": {color:C.red,   bg:"rgba(224,96,85,0.08)",   border:"rgba(224,96,85,0.24)"},
@@ -236,7 +221,6 @@ const buildInsights = (data, type) => {
   return ins.slice(0,4);
 };
  
-// ─── SCAN BAR ─────────────────────────────────────────────────────
 function ScanBar({phases,phase,done}) {
   if(!phase&&!done) return null;
   return (
@@ -256,7 +240,6 @@ function ScanBar({phases,phase,done}) {
   );
 }
  
-// ─── PRICING PANEL ────────────────────────────────────────────────
 function PricingPanel({analysis}) {
   if(!analysis) return null;
   const sm=stratMeta(analysis.strategy);
@@ -300,7 +283,6 @@ function PricingPanel({analysis}) {
   );
 }
  
-// ─── LISTINGS PANEL ───────────────────────────────────────────────
 function ListingsPanel({listings,keyword}) {
   if(!listings?.length) return null;
   return (
@@ -329,7 +311,6 @@ function ListingsPanel({listings,keyword}) {
   );
 }
  
-// ─── KEY INSIGHTS ─────────────────────────────────────────────────
 function KeyInsights({insights}) {
   if(!insights?.length) return null;
   const cols = insights.length <= 2 ? insights.length : 2;
@@ -358,18 +339,20 @@ function KeyInsights({insights}) {
   );
 }
  
-// ─── NAV ──────────────────────────────────────────────────────────
+// ─── NAV — AI Action Plan ON ───────────────────────────────────────
 const NAV = [
   {id:"shop-spy",         label:"Shop Spy",        ico:IcoScan, on:true},
   {id:"keyword-research", label:"Keyword Research", ico:IcoKey,  on:true},
-  {id:"ai-action-plan",   label:"AI Action Plan",  ico:IcoBolt, on:false},
+  {id:"ai-action-plan",   label:"AI Action Plan",  ico:IcoBolt, on:true},
 ];
  
-// ─── ROOT ─────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const [active,setActive]=useState("shop-spy");
-  const [email,setEmail]=useState("");
-  const [lo,setLo]=useState(false);
+  const [active,setActive]             = useState("shop-spy");
+  const [email,setEmail]               = useState("");
+  const [lo,setLo]                     = useState(false);
+  const [lastShopData,setLastShopData] = useState(null);
+  const [lastKwData,setLastKwData]     = useState(null);
+ 
   useEffect(()=>{createClient().auth.getUser().then(({data})=>setEmail(data?.user?.email||""));},[]);
   const logout=async()=>{setLo(true);await createClient().auth.signOut();window.location.href="/";};
   const activeNav=NAV.find(n=>n.id===active);
@@ -379,7 +362,6 @@ export default function Dashboard() {
       <style>{G}</style>
       <div className="layout">
  
-        {/* ── DESKTOP SIDEBAR ── */}
         <aside className="sidebar">
           <div style={{padding:"20px 18px 16px",borderBottom:"1px solid "+C.border}}>
             <Link href="/" style={{textDecoration:"none",display:"block"}}>
@@ -389,7 +371,6 @@ export default function Dashboard() {
               <div style={{fontSize:8.5,color:C.muted,letterSpacing:2.5,marginTop:5,fontWeight:700}}>ETSY INTELLIGENCE</div>
             </Link>
           </div>
- 
           <div style={{padding:"14px 10px 10px"}}>
             <div style={{fontSize:8,letterSpacing:2.5,color:C.muted,fontWeight:700,padding:"0 8px",marginBottom:9}}>WORKSPACE</div>
             {NAV.map(({id,label,ico,on})=>{
@@ -405,7 +386,6 @@ export default function Dashboard() {
               );
             })}
           </div>
- 
           <div style={{margin:"8px 10px 10px",background:C.s2,border:"1px solid "+C.border,borderRadius:9,padding:"14px 14px"}}>
             <div style={{fontSize:8,letterSpacing:2.5,color:C.cyanDim,fontWeight:700,marginBottom:12}}>SIGNAL LEGEND</div>
             {[
@@ -421,9 +401,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
- 
           <div style={{flex:1}}/>
- 
           <div style={{padding:"12px 14px 18px",borderTop:"1px solid "+C.border}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <div style={{width:28,height:28,borderRadius:"50%",flexShrink:0,background:"rgba(125,211,240,0.1)",border:"1px solid "+C.borderA,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:C.cyan,fontFamily:C.mono}}>{email?email[0].toUpperCase():"?"}</div>
@@ -436,52 +414,33 @@ export default function Dashboard() {
           </div>
         </aside>
  
-        {/* ── RIGHT ── */}
         <div className="right-col">
- 
-          {/* TOP HEADER */}
           <header className="top-header">
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              {/* Mobile logo */}
-              <Link href="/" style={{textDecoration:"none",display:"none"}} className="mobile-logo">
-                <span style={{fontFamily:C.font,fontWeight:800,fontSize:16,letterSpacing:4,color:C.textHi}}>
-                  <span style={{color:C.cyan}}>EX</span>RAY
-                </span>
-              </Link>
               <h1 style={{fontFamily:C.font,fontWeight:700,fontSize:15,color:C.textHi,letterSpacing:-0.2}}>{activeNav?.label}</h1>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <div style={{width:6,height:6,borderRadius:"50%",background:C.green,boxShadow:"0 0 8px 2px "+C.green,animation:"exBlink 3s infinite"}}/>
               <span style={{fontSize:11,color:C.muted,fontFamily:C.mono}}>Live</span>
-              {/* Mobile user avatar */}
-              <div style={{
-                width:26,height:26,borderRadius:"50%",
-                background:"rgba(125,211,240,0.1)",border:"1px solid "+C.borderA,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:10,fontWeight:700,color:C.cyan,fontFamily:C.mono,
-                marginLeft:8,cursor:"pointer",
-              }} onClick={logout}>
+              <div style={{width:26,height:26,borderRadius:"50%",background:"rgba(125,211,240,0.1)",border:"1px solid "+C.borderA,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:C.cyan,fontFamily:C.mono,marginLeft:8,cursor:"pointer"}} onClick={logout}>
                 {email?email[0].toUpperCase():"?"}
               </div>
             </div>
           </header>
  
-          {/* MAIN CONTENT */}
           <main className="main-content">
-            {active==="shop-spy"&&<ShopSpy/>}
-            {active==="keyword-research"&&<KeywordResearch/>}
+            {active==="shop-spy"         && <ShopSpy         onData={setLastShopData}/>}
+            {active==="keyword-research" && <KeywordResearch onData={setLastKwData}/>}
+            {active==="ai-action-plan"   && <AIActionPlan    shopData={lastShopData} keywordData={lastKwData}/>}
           </main>
  
-          {/* ── MOBILE BOTTOM TAB BAR ── */}
           <nav className="bottom-nav">
             {NAV.map(({id,label,ico,on})=>{
               const isA=active===id;
               return (
-                <button key={id}
-                  onClick={()=>on&&setActive(id)}
+                <button key={id} onClick={()=>on&&setActive(id)}
                   className={"tab-btn"+(isA?" active":"")+(on?"":" disabled")}
-                  disabled={!on}
-                >
+                  disabled={!on}>
                   {ico(isA?C.cyan:C.muted,22)}
                   <span className="tab-label">{id==="keyword-research"?"Keywords":id==="ai-action-plan"?"AI Plan":label}</span>
                 </button>
@@ -494,7 +453,6 @@ export default function Dashboard() {
   );
 }
  
-// ─── SHARED ───────────────────────────────────────────────────────
 function WSearch({value,onChange,placeholder,loading,label,onSubmit,hint}) {
   return (
     <form onSubmit={onSubmit} style={{marginBottom:16}}>
@@ -527,14 +485,12 @@ function WEmpty({icon,title,sub}){
   );
 }
  
-// ─── SHOP SPY ─────────────────────────────────────────────────────
-function ShopSpy() {
+function ShopSpy({onData}) {
   const [shop,setShop]=useState("");
   const [load,setLoad]=useState(false);
   const [data,setData]=useState(null);
   const [err,setErr]=useState("");
   const [phase,setPhase]=useState(0);
- 
   const search=async e=>{
     e.preventDefault();if(!shop.trim())return;
     setLoad(true);setErr("");setData(null);setPhase(0);
@@ -542,29 +498,21 @@ function ShopSpy() {
     try{
       const res=await fetch("/api/etsy/shop?shopname="+encodeURIComponent(shop));
       const json=await res.json();
-      if(!res.ok)setErr(json.error||"Something went wrong");
-      else setData(json);
+      if(!res.ok) setErr(json.error||"Something went wrong");
+      else { setData(json); onData(json); }
     }catch{setErr("Network error. Please try again.");}
     finally{setLoad(false);setPhase(0);}
   };
- 
   const signals=data?.pricingAnalysis?.strategy?buildSignals(data.pricingAnalysis.strategy):[];
   const insights=data?buildInsights(data,"shop"):[];
- 
   return(
     <div className="content-inner">
-      <p style={{fontSize:13,color:C.text,marginBottom:16,lineHeight:1.6}}>
-        Decode any Etsy competitor — pricing strategy, listing intelligence, market position.
-      </p>
-      <WSearch value={shop} onChange={e=>setShop(e.target.value)}
-        placeholder="Shop name or Etsy URL…"
-        hint="Enter Etsy shop name or URL"
-        loading={load} label="Scan" onSubmit={search}/>
+      <p style={{fontSize:13,color:C.text,marginBottom:16,lineHeight:1.6}}>Decode any Etsy competitor — pricing strategy, listing intelligence, market position.</p>
+      <WSearch value={shop} onChange={e=>setShop(e.target.value)} placeholder="Shop name or Etsy URL…" hint="Enter Etsy shop name or URL" loading={load} label="Scan" onSubmit={search}/>
       <ScanBar phases={["Locating shop listings","Extracting pricing data","Building intelligence signals"]} phase={phase} done={!!data}/>
       {err&&<WErr msg={err}/>}
       {data&&!load&&(
         <div className="ex-fade">
-          {/* Shop overview */}
           <div className="sig-card" style={{background:C.s1,border:"1px solid "+C.border,borderRadius:10,padding:"18px 20px",marginBottom:12}}>
             <div style={{fontSize:8.5,letterSpacing:2.5,color:C.cyanDim,fontWeight:700,marginBottom:10}}>INTELLIGENCE TARGET</div>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
@@ -606,14 +554,12 @@ function ShopSpy() {
   );
 }
  
-// ─── KEYWORD RESEARCH ─────────────────────────────────────────────
-function KeywordResearch() {
+function KeywordResearch({onData}) {
   const [kw,setKw]=useState("");
   const [load,setLoad]=useState(false);
   const [data,setData]=useState(null);
   const [err,setErr]=useState("");
   const [phase,setPhase]=useState(0);
- 
   const search=async e=>{
     e.preventDefault();if(!kw.trim())return;
     setLoad(true);setErr("");setData(null);setPhase(0);
@@ -621,31 +567,23 @@ function KeywordResearch() {
     try{
       const res=await fetch("/api/etsy/keywords?keyword="+encodeURIComponent(kw));
       const json=await res.json();
-      if(!res.ok)setErr(json.error||"Something went wrong");
-      else setData(json);
+      if(!res.ok) setErr(json.error||"Something went wrong");
+      else { setData(json); onData(json); }
     }catch{setErr("Network error. Please try again.");}
     finally{setLoad(false);setPhase(0);}
   };
- 
   const pSig=data?.pricingAnalysis?.strategy?buildSignals(data.pricingAnalysis.strategy):[];
   const dSig=data?.difficultyScore?diffSignal(data.difficultyScore):null;
   const allSig=[...(dSig?[dSig]:[]),...pSig].slice(0,3);
   const insights=data?buildInsights(data,"keyword"):[];
- 
   return(
     <div className="content-inner">
-      <p style={{fontSize:13,color:C.text,marginBottom:16,lineHeight:1.6}}>
-        Surface competition density, pricing structure, and difficulty score for any Etsy keyword.
-      </p>
-      <WSearch value={kw} onChange={e=>setKw(e.target.value)}
-        placeholder="e.g. minimalist wall art…"
-        hint="Enter a keyword to analyze"
-        loading={load} label="Research" onSubmit={search}/>
+      <p style={{fontSize:13,color:C.text,marginBottom:16,lineHeight:1.6}}>Surface competition density, pricing structure, and difficulty score for any Etsy keyword.</p>
+      <WSearch value={kw} onChange={e=>setKw(e.target.value)} placeholder="e.g. minimalist wall art…" hint="Enter a keyword to analyze" loading={load} label="Research" onSubmit={search}/>
       <ScanBar phases={["Scanning top listings","Extracting pricing signals","Calculating difficulty score"]} phase={phase} done={!!data}/>
       {err&&<WErr msg={err}/>}
       {data&&!load&&(
         <div className="ex-fade">
-          {/* Stat cards — 2x2 on mobile, 4x1 on desktop */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:12}}>
             {[
               {label:"Avg Price",  val:data.averagePrice?"$"+data.averagePrice:"—",  sub:"top results", color:C.textHi},
