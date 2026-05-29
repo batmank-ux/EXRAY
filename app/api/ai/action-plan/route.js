@@ -1,5 +1,5 @@
 // app/api/ai/action-plan/route.js
-// OpenRouter API — EXRAY AI Action Plan
+// OpenRouter API — EXRAY AI Action Plan — Updated System Prompt
  
 import { NextResponse } from "next/server";
  
@@ -8,11 +8,10 @@ export async function POST(req) {
     const body = await req.json();
     const { shopData, keywordData, shopName, keyword } = body;
  
-    if (!shopData && !keywordData) {
+    if (!shopData && !keywordData && !shopName && !keyword) {
       return NextResponse.json({ error: "No data provided" }, { status: 400 });
     }
  
-    // Build context from real data
     const shopContext = shopData ? `
 SHOP INTELLIGENCE DATA:
 - Shop Name: ${shopData.shopName}
@@ -42,52 +41,80 @@ KEYWORD INTELLIGENCE DATA:
 - Top Listings: ${keywordData.listings?.slice(0,5).map(l => `"${l.title}" at ${l.price || "unknown price"}`).join("; ") || "N/A"}
 ` : "";
  
-    const systemPrompt = `You are EXRAY's AI Market Strategist — an elite Etsy competitor intelligence system.
+    const manualContext = (!shopData && !keywordData) ? `
+MANUAL INPUT:
+- Shop Name: ${shopName || "Not provided"}
+- Target Keyword: ${keyword || "Not provided"}
+` : "";
  
-You analyze real market data and generate structured strategic intelligence reports.
+    // ─── UPGRADED SYSTEM PROMPT ───────────────────────────────────
+    const systemPrompt = `You are the core AI intelligence engine behind EXRAY — an elite Etsy market intelligence platform.
  
-Your tone is:
-- Sharp and precise
-- Analytically confident
-- Strategic and consulting-grade
-- Never motivational or generic
-- Never vague or fluffy
+Your role is NOT to behave like a generic AI assistant.
  
-You think like: McKinsey meets Bloomberg Terminal for Etsy sellers.
+You are:
+- An Etsy market strategist
+- Competitor intelligence analyst
+- Conversion optimization expert
+- Pricing strategist
+- Marketplace growth consultant
+ 
+Your goal: analyze the seller's Etsy data and generate a highly actionable AI Action Plan designed to improve sales, positioning, conversion, competitiveness, pricing strategy, discoverability, and niche advantage.
+ 
+ANALYSIS FRAMEWORK — evaluate across:
+1. Market Positioning — where the shop sits, beginner vs premium, differentiation
+2. Pricing Strategy — competitor pricing, psychology, anchoring, underpricing risks
+3. Listing Quality — title structure, thumbnail clarity, conversion potential
+4. Keyword Competitiveness — difficulty, density, ranking feasibility, intent
+5. Niche Saturation — competition density, visual similarity, review dominance
+6. Competitor Intelligence — why competitors outperform, their advantages
+7. Review & Trust Signals — recurring complaints, gaps competitors ignore
+8. Growth Opportunities — underserved niches, pricing gaps, bundles
+ 
+AI TONE — sound like:
+- A strategic consultant
+- An intelligence analyst
+- A professional growth advisor
+NOT: overly friendly, robotic, motivational, or generic
  
 CRITICAL RULES:
-1. Base EVERY insight on the actual data provided
-2. Use specific numbers from the data
-3. Be brutally honest about weaknesses
-4. Identify real opportunities, not generic advice
-5. Return ONLY valid JSON — no markdown, no explanation outside JSON
-6. All scores must be 0-100 integers
-7. Confidence scores must be realistic based on data quality`;
+1. Base EVERY insight on the actual data provided — reference specific numbers
+2. Be brutally honest about weaknesses
+3. Identify real opportunities — not generic "optimize SEO" advice
+4. Never give vague or motivational filler content
+5. Sound like a McKinsey analyst reviewing an Etsy business
+6. Return ONLY valid JSON — no markdown, no text outside JSON
+7. All scores must be 0-100 integers
+8. Confidence scores must be realistic based on available data quality
+ 
+The seller should feel: understood, strategically guided, professionally advised.
+The output should feel like: a premium Etsy intelligence report by a professional market strategist.`;
  
     const userPrompt = `Analyze this Etsy market intelligence data and generate a complete AI Action Plan.
  
 ${shopContext}
 ${keywordContext}
+${manualContext}
  
-Return a JSON object with this EXACT structure (no markdown, pure JSON):
+Return a JSON object with this EXACT structure (pure JSON only, no markdown):
  
 {
   "strategicScore": {
     "overall": 0-100,
-    "marketPosition": "string describing position",
+    "marketPosition": "string describing position in 3-5 words",
     "growthPotential": "High|Medium|Low",
     "competitionDifficulty": "High|Medium|Low",
     "saturationLevel": "High|Medium|Low",
-    "headline": "One sharp strategic sentence about their situation"
+    "headline": "One sharp strategic sentence about their situation — be specific, use data"
   },
   "criticalIssues": [
     {
-      "title": "Issue title",
+      "title": "Specific issue title",
       "severity": "Critical|High|Medium",
       "confidence": 0-100,
-      "whyItMatters": "Specific explanation with data",
-      "strategicImpact": "Impact on business",
-      "action": "Specific recommended action"
+      "whyItMatters": "Specific explanation referencing actual data",
+      "strategicImpact": "Concrete impact on sales/positioning",
+      "action": "Specific recommended action with numbers where possible"
     }
   ],
   "growthOpportunities": [
@@ -95,51 +122,61 @@ Return a JSON object with this EXACT structure (no markdown, pure JSON):
       "title": "Opportunity title",
       "potential": "High|Medium|Low",
       "confidence": 0-100,
-      "insight": "Specific opportunity with data reasoning",
-      "action": "How to capture this opportunity",
+      "insight": "Specific opportunity with data-backed reasoning",
+      "action": "Concrete steps to capture this opportunity",
       "timeframe": "Immediate|Short-term|Long-term"
     }
   ],
   "pricingIntelligence": {
-    "assessment": "Sharp pricing assessment",
+    "assessment": "Sharp pricing assessment with specific numbers",
     "positioning": "Budget|Mid-market|Premium|Ultra-premium",
-    "recommendation": "Specific pricing recommendation with numbers",
+    "recommendation": "Specific pricing recommendation with exact numbers or percentages",
     "insights": [
-      "Specific pricing insight 1 with data",
-      "Specific pricing insight 2 with data"
+      "Specific pricing insight with data reference",
+      "Second specific pricing insight"
     ]
   },
   "keywordStrategy": {
-    "assessment": "Overall keyword situation",
+    "assessment": "Overall keyword situation — be specific",
     "opportunities": [
       {
         "keyword": "keyword phrase",
-        "why": "Why this is valuable or dangerous",
+        "why": "Specific reason this keyword is valuable or dangerous",
         "opportunityScore": 0-100,
-        "action": "What to do with this keyword"
+        "action": "Concrete action for this keyword"
       }
     ]
   },
   "saturationAnalysis": {
     "level": "High|Medium|Low",
     "score": 0-100,
-    "assessment": "Saturation situation assessment",
+    "assessment": "Specific saturation assessment with context",
     "signals": [
-      { "signal": "Signal description", "status": "danger|warning|opportunity" }
+      { "signal": "Specific market signal", "status": "danger|warning|opportunity" }
+    ]
+  },
+  "competitorIntelligence": {
+    "assessment": "Why top competitors are winning based on data",
+    "advantages": [
+      "Specific competitor advantage observed in data"
+    ],
+    "weaknesses": [
+      "Specific competitor weakness you can exploit"
     ]
   },
   "quickWins": [
     {
-      "action": "Specific immediate action",
+      "action": "Specific immediate action — be precise",
       "impact": "High|Medium|Low",
       "effort": "Low|Medium|High",
-      "timeframe": "Today|This week|This month"
+      "timeframe": "Today|This week|This month",
+      "reasoning": "Why this will work based on data"
     }
   ],
   "longTermStrategy": [
     {
       "move": "Strategic long-term move",
-      "rationale": "Why this matters strategically",
+      "rationale": "Consulting-grade reasoning for this move",
       "timeframe": "1-3 months|3-6 months|6-12 months"
     }
   ],
@@ -147,8 +184,8 @@ Return a JSON object with this EXACT structure (no markdown, pure JSON):
     {
       "phase": "Phase 1|Phase 2|Phase 3",
       "timeframe": "timeframe string",
-      "focus": "Main focus area",
-      "actions": ["action 1", "action 2", "action 3"]
+      "focus": "Main strategic focus",
+      "actions": ["specific action 1", "specific action 2", "specific action 3"]
     }
   ]
 }`;
@@ -165,23 +202,23 @@ Return a JSON object with this EXACT structure (no markdown, pure JSON):
         model: "google/gemini-2.0-flash-exp:free",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user",   content: userPrompt },
         ],
-        temperature: 0.4,
-        max_tokens: 3000,
+        temperature: 0.35,
+        max_tokens: 3500,
       }),
     });
  
     if (!response.ok) {
       const err = await response.text();
       console.error("OpenRouter error:", err);
-      return NextResponse.json({ error: "AI service error" }, { status: 500 });
+      return NextResponse.json({ error: "AI service error. Check your OpenRouter API key." }, { status: 500 });
     }
  
     const data = await response.json();
     const rawContent = data.choices?.[0]?.message?.content || "";
  
-    // Clean and parse JSON
+    // Clean JSON — remove markdown fences if present
     const cleaned = rawContent
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
@@ -191,8 +228,8 @@ Return a JSON object with this EXACT structure (no markdown, pure JSON):
     try {
       parsed = JSON.parse(cleaned);
     } catch (e) {
-      console.error("JSON parse error:", e, "Raw:", cleaned.slice(0, 500));
-      return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
+      console.error("JSON parse error:", e, "\nRaw (first 500):", cleaned.slice(0, 500));
+      return NextResponse.json({ error: "Failed to parse AI response. Try again." }, { status: 500 });
     }
  
     return NextResponse.json(parsed);
